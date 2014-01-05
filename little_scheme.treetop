@@ -1,38 +1,65 @@
 grammar LittleScheme
+  rule sequence
+    (space* expression space*)* {
+      def to_ast
+        elements.map { |n| n.expression.to_ast }
+      end
+    }
+  end
+
   rule expression
-    body:(list / atom / space)* {
-      def evaluate(env)
-        body.elements
-        .select { |s| s.respond_to?(:evaluate) }
-        .map { |s| s.evaluate(env) }
+    quote / list / atom
+  end
+
+  rule quote
+    "'" expression {
+      def to_ast
+        [:quote, expression.to_ast]
       end
     }
   end
 
   rule list
-    '(' body:expression ')' {
-      def evaluate(env)
-        first, *rest = result = body.evaluate(env)
-
-        if first.respond_to?(:call)
-          first.call(*rest)
-        else
-          result
-        end
+    '(' sequence ')' {
+      def to_ast
+        sequence.to_ast
       end
     }
   end
 
   rule atom
-    [^()\s]+ {
-      def evaluate(env)
-        a = text_value.to_sym
-        env[a] || a
+    numeric_atom / non_numeric_atom
+  end
+
+  rule numeric_atom
+    integer / float
+  end
+
+  rule non_numeric_atom
+    [^'()\s] [^()\s]* {
+      def to_ast
+        text_value.to_sym
+      end
+    }
+  end
+
+  rule integer
+    [0-9]+ {
+      def to_ast
+        text_value.to_i
+      end
+    }
+  end
+
+  rule float
+    [0-9]* '.' [0-9]+ {
+      def to_ast
+        text_value.to_f
       end
     }
   end
 
   rule space
-    [\s]+
+    [\s\t\n]
   end
 end
