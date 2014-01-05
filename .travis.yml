@@ -1,0 +1,4 @@
+language: ruby
+rvm:
+  - 2.0.0
+script: 'ruby little_scheme_test.rb'

@@ -1,3 +1,4 @@
+require 'bundler/setup'
 require 'treetop'
 Treetop.load('little_scheme.treetop')
 
