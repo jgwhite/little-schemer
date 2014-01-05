@@ -1,4 +1,4 @@
-# Little Schemer book club
+# Little Schemer book club [![Build Status](https://travis-ci.org/jgwhite/little-schemer.png?branch=master)](https://travis-ci.org/jgwhite/little-schemer)
 
 In which we write a ruby interpreter for scheme and use it to work
 through the [Little Schemer
