@@ -1,0 +1,38 @@
+grammar LittleScheme
+  rule expression
+    body:(list / atom / space)* {
+      def evaluate(env)
+        body.elements
+        .select { |s| s.respond_to?(:evaluate) }
+        .map { |s| s.evaluate(env) }
+      end
+    }
+  end
+
+  rule list
+    '(' body:expression ')' {
+      def evaluate(env)
+        first, *rest = result = body.evaluate(env)
+
+        if first.respond_to?(:call)
+          first.call(*rest)
+        else
+          result
+        end
+      end
+    }
+  end
+
+  rule atom
+    [^()\s]+ {
+      def evaluate(env)
+        a = text_value.to_sym
+        env[a] || a
+      end
+    }
+  end
+
+  rule space
+    [\s]+
+  end
+end
