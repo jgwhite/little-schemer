@@ -1,6 +1,7 @@
 require_relative 'little_scheme'
 require 'minitest/autorun'
 require 'minitest/pride'
+require 'pry'
 
 class LittleSchemeTest < MiniTest::Unit::TestCase
   def assert_ast(result, source)
@@ -60,8 +61,9 @@ class LittleSchemeTest < MiniTest::Unit::TestCase
   end
 
   def test_pair
-    assert_result true, "(pair? ())"
-    assert_result false, "(pair? a)"
+    assert_result true, "(pair? (a))"
+    assert_result false, "(pair? ())"
+    assert_result nil, "(pair? a)"
   end
 
   def test_define
@@ -130,6 +132,42 @@ class LittleSchemeTest < MiniTest::Unit::TestCase
       (define l (beans beans we need jelly beans))
 
       (eq? (car l) (car (cdr l)))
+    }
+  end
+
+  def test_lat
+    definition = %{
+      (define atom?
+        (lambda (x)
+          (and (not (pair? x)) (not (null? x)))))
+
+      (define lat?
+        (lambda (l)
+          (cond
+            ((null? l) #t)
+            ((atom? (car l)) (lat? (cdr l)))
+            (else #f))))
+    }
+
+    assert_result true, %{
+      #{definition}
+      (lat? (Jack Sprat could eat no chicken fat))
+    }
+    assert_result true, %{
+      #{definition}
+      (lat? ())
+    }
+    assert_result false, %{
+      #{definition}
+      (lat? ((Jack) sprat could eat not chicken fat))
+    }
+    assert_result true, %{
+      #{definition}
+      (lat? (bacon and eggs))
+    }
+    assert_result false, %{
+      #{definition}
+      (lat? (bacon (and eggs)))
     }
   end
 end

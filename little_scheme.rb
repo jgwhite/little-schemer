@@ -44,7 +44,7 @@ module LittleScheme
   end
 
   def self.evaluate_atom(env, atom)
-    result = env[atom] || atom
+    result = env.fetch(atom, atom)
 
     [env, result]
   end
@@ -84,7 +84,7 @@ module LittleScheme
       env, s = evaluate(env, s)
 
       if s.is_a?(Array)
-        [env, s == []]
+        [env, s.empty?]
       else
         [env, nil]
       end
@@ -93,14 +93,22 @@ module LittleScheme
     pair?: -> (env, s) {
       env, s = evaluate(env, s)
 
-      [env, s.is_a?(Array)]
+      if s.is_a?(Array)
+        [env, !s.empty?]
+      else
+        [env, nil]
+      end
     },
 
     and: -> (env, *clauses) {
-      result = clauses.all? { |clause|
-        env, r = evaluate(env, clause)
-        r
-      }
+      result = if clauses.size > 1
+        clauses.all? { |clause|
+          env, r = evaluate(env, clause)
+          r
+        }
+      else
+        clauses
+      end
 
       [env, result]
     },
@@ -127,10 +135,12 @@ module LittleScheme
       [env, nil]
     },
 
-    lambda: -> (env, names, s) {
-      result = -> (_, *values) {
+    lambda: -> (env, names, block) {
+      result = -> (env, *values) {
+        scope = env
+        values = values.map { |v| scope, v = evaluate(scope, v); v }
         scope = env.merge(Hash[names.zip(values)])
-        _, result = evaluate(scope, s)
+        _, result = evaluate(scope, block)
 
         [env, result]
       }
@@ -140,6 +150,26 @@ module LittleScheme
 
     quote: -> (env, s) {
       [env, s]
-    }
+    },
+
+    :"#t" => true,
+    :"#f" => false,
+
+    cond: -> (env, *branches) {
+      result = nil
+
+      branches.each do |q, a|
+        env, q = evaluate(env, q)
+
+        if q
+          env, result = evaluate(env, a)
+          break
+        end
+      end
+
+      [env, result]
+    },
+
+    else: true
   }
 end
